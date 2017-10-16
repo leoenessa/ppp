@@ -8,6 +8,8 @@ import sys
 import re
 import imaplib
 
+sleeptime = 5
+
 logp = "leonardo.conceicao"
 pwdp = b'bGVvbGVvMTIz'
 host="zmta.trt1.jus.br"
@@ -103,13 +105,30 @@ if __name__ == '__main__':
                         email = leremail(conn)
                         comando = checkcomando(email)
                         if(comando):
-                                driver = webdriver.Chrome()
-                                driver.set_window_size(1120, 1050)
                                 print("Execuntado: "+comando)
                                 if(comando==cmds[0]):
+                                        driver = webdriver.Chrome()
+                                        driver.set_window_size(1120, 1050)
                                         ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'))
                                         print("DONE!")
-                                        driver.close()                                        
-                except Exception as e:
-                        print("nA CARA"+str(e))
-                time.sleep(60)
+                                        driver.close()
+                                if(comando==cmds[1]):
+                                        pass
+                                if(comando==cmds[2]):
+                                        print("EXIT!")
+                                        quit()
+                                if(comando==cmds[3]):
+                                        pass
+
+                        now = datetime.datetime.now().time()
+
+
+                        if(now.hour not in range(6,19)):
+                                while(datetime.datetime.now().hour<=6):
+                                        sys.stdout.write("\r({0}) Sleeping:}".format(datetime.datetime.now())
+                                        sys.stdout.flush()
+                                        time.sleep(60)
+                        else:
+                                time.sleep(sleeptime)
+                        except Exception as e:
+                                print("nA CARA"+str(e))
