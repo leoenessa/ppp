@@ -7,14 +7,18 @@ import getpass
 import sys
 import re
 import imaplib
+import os
 
 sleeptime = 5
 
 logp = "leonardo.conceicao"
 pwdp = b'bGVvbGVvMTIz'
-host="zmta.trt1.jus.br"
-logm= "leonardo.conceicao@trt1.jus.br"
-pwdm = b'bGVvbGVvMTIz'
+#host="zmta.trt1.jus.br"
+host = "imap.globo.com"
+#logm= "leonardo.conceicao@trt1.jus.br"
+logm= "leonardooc@globo.com"
+#pwdm = b'bGVvbGVvMTIz'
+pwdm = b'bGVvZW5lc3Nh'
 cmds = ["ponto","print","stop","getnum"]
 
 
@@ -37,19 +41,17 @@ def leremail(conn):
                 ultimo = listaid[-1]
                 resultado,data = conn.fetch(ultimo,"(RFC822)")
                 email = data[0][1]
-                #print(conn.list())
                 conn.store(ultimo,'+FLAGS',r'(\Deleted)')
                 conn.expunge()
                 conn.close()
                 conn.logout()
                 return(email)
         except IndexError as e:
-                print("Nao ha comandos a serem executados")
-                sys.stdout.flush()
+                sys.stdout.write("Nao ha comandos a serem executados")
 
 def checkcomando(email):
         try:
-                pattern_comando = re.compile(r'(###comando:)(ponto|print|getnum)')
+                pattern_comando = re.compile(r'(###comando:)(ponto|print|getnum|stop)')
                 comando = pattern_comando.search(email.decode('utf-8'))
                 #print(comando.group(2))
                 return(comando.group(2))
@@ -79,17 +81,19 @@ def ppp(wdriver, logp,pwdp):
 	wdriver.implicitly_wait(2)
 	wdriver.find_element_by_link_text('REGISTRAR PONTO').click()
 	wdriver.implicitly_wait(2)
-	#wdriver.find_element_by_id('form:j_idt77').click()
+	wdriver.find_element_by_id('form:j_idt77').click()
 
 
 if __name__ == '__main__':
 
-	'''target = datetime.datetime(2017,10,10,15,33)
+    os.system('cls')
 
-	while(datetime.datetime.now()<=target):
-		sys.stdout.write("\r({0}) Aguardando:-{1}".format(datetime.datetime.now(),target))
-		sys.stdout.flush()
-		time.sleep(5)
+    '''target = datetime.datetime(2017,10,10,15,33)
+
+    while(datetime.datetime.now()<=target):
+        sys.stdout.write("\r({0}) Aguardando:-{1}".format(datetime.datetime.now(),target))
+	sys.stdout.flush()
+	time.sleep(5)
 
 	driver = webdriver.Chrome()
 	#driver = webdriver.PhantomJS()
@@ -97,38 +101,38 @@ if __name__ == '__main__':
 	ppp(driver,log,pwd)
 	print("DONE!")
 	driver.close()'''
-	while(True):
-                sys.stdout.write("\r{}".format("Rodando..."))
+    while(True):
+        sys.stdout.write("\r{}".format("Rodando..."))
+        sys.stdout.flush()
+        try:
+            now = datetime.datetime.now().time()
+            while(now.hour not in range(6,20)):
+                sys.stdout.write("\r({}) Sleeping...".format(datetime.datetime.now().time()))
                 sys.stdout.flush()
-                try:
-                        conn = conectar(logm,base64.b64decode(pwdm).decode('ascii'),host)
-                        email = leremail(conn)
-                        comando = checkcomando(email)
-                        if(comando):
-                                print("Execuntado: "+comando)
-                                if(comando==cmds[0]):
-                                        driver = webdriver.Chrome()
-                                        driver.set_window_size(1120, 1050)
-                                        ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'))
-                                        print("DONE!")
-                                        driver.close()
-                                if(comando==cmds[1]):
-                                        pass
-                                if(comando==cmds[2]):
-                                        print("EXIT!")
-                                        quit()
-                                if(comando==cmds[3]):
-                                        pass
+                time.sleep(30)
+                now = datetime.datetime.now().time()
 
-                        now = datetime.datetime.now().time()
-
-
-                        if(now.hour not in range(6,19)):
-                                while(datetime.datetime.now().hour<=6):
-                                        sys.stdout.write("\r({0}) Sleeping:}".format(datetime.datetime.now())
-                                        sys.stdout.flush()
-                                        time.sleep(60)
-                        else:
-                                time.sleep(sleeptime)
-                        except Exception as e:
-                                print("nA CARA"+str(e))
+                    
+                conn = conectar(logm,base64.b64decode(pwdm).decode('ascii'),host)
+                email = leremail(conn)
+                comando = checkcomando(email)
+                if(comando):
+                    print("Executando: "+comando)
+                    if(comando==cmds[0]): #point
+                        print("POINT!")
+                        '''driver = webdriver.Chrome()
+                        driver.set_window_size(1120, 1050)
+                        ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'))
+                        print("DONE!")
+                        driver.close()'''
+                    if(comando==cmds[1]): #print
+                        print("SCREENSHOT ENVIADO!")
+                    if(comando==cmds[2]): #stop
+                        print("EXIT!")
+                        quit()
+                    if(comando==cmds[3]): #pega num sequencia
+                        print("Num sequencia enviado")
+                else:
+                    time.sleep(sleeptime)
+        except Exception as e:
+                print("[-]ERRO:"+str(e))
