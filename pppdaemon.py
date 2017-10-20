@@ -19,20 +19,19 @@ logp = "leonardo.conceicao"
 pwdp = b'bGVvbGVvMTIz'
 host="zmta.trt1.jus.br"
 #host = "imap.globo.com"
-logm= "leonardo.conceicao@trt1.jus.br"
 #logm= "leonardooc@globo.com"
+logm= "leonardo.conceicao@trt1.jus.br"
 pwdm = b'bGVvbGVvMTIz'
 #pwdm = b'bGVvZW5lc3Nh'
-cmds = ["ppp","print","stop","getnum"]
+cmds = ["ppp","print","stop","status"]
 
 
-def enviaEmail(login,password,destino,img):
+def enviaEmail(login,password,destino):
     msg = MIMEMultipart()
     msg['Subject'] = 'Retorno ppp '+str(datetime.datetime.now().strftime("%d-%m-%H-%M"))
     #msg['From'] = 'leonardooc@globo.com'
     msg['From'] = 'leonardo.conceicao@trt1.jus.br'
     msg['To'] = 'leonardodeoc@gmail.com'
-    #msg.preamble = "reuniao de familia"
 
     part = MIMEBase("image","octet-stream")
     part.set_payload(open('snapshot.jpg','rb').read())
@@ -51,6 +50,9 @@ def enviaEmail(login,password,destino,img):
         print('Email enviado!')
     except smtplib.SMTPException as e:  
         print(str(e))
+
+def enviaStatus():
+    pass
 
 def conectar(log,pwd,host):
     try:
@@ -81,9 +83,8 @@ def leremail(conn):
 
 def checkcomando(email):
     try:
-        pattern_comando = re.compile(r'(###comando:)(ppp|print|getnum|stop)')
+        pattern_comando = re.compile(r'(###comando:)(ppp|print|status|stop)')
         comando = pattern_comando.search(email.decode('utf-8'))
-        print(comando.group(2))
         return(comando.group(2))
     except Exception as e:
         pass
@@ -117,16 +118,9 @@ def ppp(wdriver, logp,pwdp, sofoto):
         wdriver.implicitly_wait(2)
         #wdriver.find_element_by_id('form:j_idt77').click()
         wdriver.find_element_by_id('form:j_idt75').click() #voltar
-    wdriver.find_element_by_link_text('FREQUÊNCIA').click() #frequencia    
-    #wdriver.find_elements_by_xpath('//label[contains(text(), "{0}")]'.format(str(datetime.datetime.now().strftime("%d/%m/%y"))))
-    scheight = .1
-    while(scheight<9.9):
-        #wdriver.execute_script("window.scrollTo(0, document.body.scrollHeight/%s);" % scheight)
-        driver.execute_script("document.body.style.zoom='zoom 80%'")
-        wdriver.execute_script("window.scrollTo(0,document.body.height/2")
-        scheight += .1
+    wdriver.find_element_by_link_text(base64.b64decode(b'RlJFUVXDik5DSUE=').decode('ascii')).click()
+    wdriver.execute_script("document.body.style.zoom='50%'")
     wdriver.save_screenshot('snapshot.jpg')
-
 
 if __name__ == '__main__':
     '''
@@ -153,15 +147,20 @@ if __name__ == '__main__':
                 if(comando==cmds[0]): #ppp
                     driver = webdriver.Chrome()
                     driver.set_window_size(1120, 1050)
-                    ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'))
+                    ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'),False)
                     print("DONE!")
                     driver.close()
+                    enviaEmail(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
                 if(comando==cmds[1]): #print
+                    driver = webdriver.Chrome()
+                    driver.set_window_size(1120, 1050)
+                    ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'),True)
                     print("SCREENSHOT ENVIADO!")
+                    enviaEmail(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
                 if(comando==cmds[2]): #stop
                     print("EXIT!")
                     quit()
-                if(comando==cmds[3]): #pega num sequencia
+                if(comando==cmds[3]): #status
                     print("Num sequencia enviado")
             else:
                 time.sleep(sleeptime)
