@@ -7,13 +7,14 @@ import sys
 import re
 import imaplib
 import smtplib
+from email import encoders
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 import os
 
-sleeptime = 10
+sleeptime = 60
 
 logp = "leonardo.conceicao"
 pwdp = b'bGVvbGVvMTIz'
@@ -118,26 +119,31 @@ def ppp(wdriver, logp,pwdp, sofoto):
         wdriver.implicitly_wait(2)
         #wdriver.find_element_by_id('form:j_idt77').click()
         wdriver.find_element_by_id('form:j_idt75').click() #voltar
-    wdriver.find_element_by_link_text(base64.b64decode(b'RlJFUVXDik5DSUE=').decode('ascii')).click()
-    wdriver.execute_script("document.body.style.zoom='50%'")
+    wdriver.find_element_by_link_text('FREQUÊNCIA').click()
+    wdriver.execute_script("document.body.style.zoom='73%'")
+    wdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     wdriver.save_screenshot('snapshot.jpg')
 
 if __name__ == '__main__':
-    '''
+    
     os.system('cls')
 
     while(True):
-        #sys.stdout.write
-        print("\r{}".format("Rodando..."))
-        #sys.stdout.flush()
+        sys.stdout.write("\r{}".format("Rodando..."))
+        sys.stdout.flush()
         try:
+            #TESTA SE FORA DO HR
+            if(datetime.datetime.today().weekday()>=5):
+                sys.stdout.write("\r{}".format("Sleeping(fds)..."))
+                sys.stdout.flush()
+                time.sleep(60)
+
             now = datetime.datetime.now().time()
             while(now.hour not in range(6,20)):
                 sys.stdout.write("\r({}) Sleeping...".format(datetime.datetime.now().time()))
                 sys.stdout.flush()
-                time.sleep(30)
+                time.sleep(60)
                 now = datetime.datetime.now().time()
-
                     
             conn = conectar(logm,base64.b64decode(pwdm).decode('ascii'),host)
             email = leremail(conn)
@@ -155,8 +161,9 @@ if __name__ == '__main__':
                     driver = webdriver.Chrome()
                     driver.set_window_size(1120, 1050)
                     ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'),True)
-                    print("SCREENSHOT ENVIADO!")
+                    driver.close()
                     enviaEmail(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
+                    print("SCREENSHOT ENVIADO!")                    
                 if(comando==cmds[2]): #stop
                     print("EXIT!")
                     quit()
@@ -166,12 +173,6 @@ if __name__ == '__main__':
                 time.sleep(sleeptime)
         except Exception as e:
                 print("[-]ERRO:"+str(e))
-    '''
-    driver = webdriver.Chrome()
-    driver.set_window_size(1120, 1050)
-    ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'),True)
-    print("DONE!")
-    driver.close()
     '''target = datetime.datetime(2017,10,10,15,33)
 
         while(datetime.datetime.now()<=target):
