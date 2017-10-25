@@ -114,12 +114,14 @@ def ppp(wdriver, logp,pwdp, sofoto):
     except:
         pass
     if(not sofoto):
-        wdriver.implicitly_wait(2)
+        wdriver.implicitly_wait(1)
         wdriver.find_element_by_link_text(base64.b64decode(b'UkVHSVNUUkFSIFBPTlRP').decode('ascii')).click()
-        wdriver.implicitly_wait(2)
-        #wdriver.find_element_by_id('form:j_idt77').click()
+        wdriver.implicitly_wait(1)
+        wdriver.find_element_by_id('form:j_idt77').click()
+        time.sleep(3)
         wdriver.find_element_by_id('form:j_idt75').click() #voltar
-    wdriver.find_element_by_link_text('FREQUÊNCIA').click()
+    #wdriver.find_element_by_link_text('FREQUÊNCIA').click()
+    wdriver.find_element_by_link_text(base64.b64decode(b'RlJFUVXDik5DSUE=').decode('utf-8')).click()
     wdriver.execute_script("document.body.style.zoom='73%'")
     wdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     wdriver.save_screenshot('snapshot.jpg')
@@ -136,7 +138,7 @@ if __name__ == '__main__':
             if(datetime.datetime.today().weekday()>=5):
                 sys.stdout.write("\r{}".format("Sleeping(fds)..."))
                 sys.stdout.flush()
-                time.sleep(60)
+                time.sleep(300)
 
             now = datetime.datetime.now().time()
             while(now.hour not in range(6,20)):
@@ -150,6 +152,7 @@ if __name__ == '__main__':
             comando = checkcomando(email)
             if(comando):
                 print("Executando: "+comando)
+
                 if(comando==cmds[0]): #ppp
                     driver = webdriver.Chrome()
                     driver.set_window_size(1120, 1050)
@@ -157,6 +160,7 @@ if __name__ == '__main__':
                     print("DONE!")
                     driver.close()
                     enviaEmail(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
+                
                 if(comando==cmds[1]): #print
                     driver = webdriver.Chrome()
                     driver.set_window_size(1120, 1050)
@@ -164,9 +168,11 @@ if __name__ == '__main__':
                     driver.close()
                     enviaEmail(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
                     print("SCREENSHOT ENVIADO!")                    
+                
                 if(comando==cmds[2]): #stop
                     print("EXIT!")
                     quit()
+                
                 if(comando==cmds[3]): #status
                     print("Num sequencia enviado")
             else:
