@@ -18,19 +18,18 @@ sleeptime = 60
 
 logp = "leonardo.conceicao"
 pwdp = b'bGVvbGVvMTIz'
+
 host="zmta.trt1.jus.br"
-#host = "imap.globo.com"
-#logm= "leonardooc@globo.com"
 logm= "leonardo.conceicao@trt1.jus.br"
 pwdm = b'bGVvbGVvMTIz'
-#pwdm = b'bGVvZW5lc3Nh'
-cmds = ["ppp","print","stop","status"]
+
+cmds = ["ppp","print","stop","status","ppa","agenda","?"]
+agendado = []
 
 
 def enviaEmail(login,password,destino):
     msg = MIMEMultipart()
     msg['Subject'] = 'Retorno ppp '+str(datetime.datetime.now().strftime("%d-%m-%H-%M"))
-    #msg['From'] = 'leonardooc@globo.com'
     msg['From'] = 'leonardo.conceicao@trt1.jus.br'
     msg['To'] = 'leonardodeoc@gmail.com'
 
@@ -50,10 +49,23 @@ def enviaEmail(login,password,destino):
         server.close()
         print('Email enviado!')
     except smtplib.SMTPException as e:  
-        print(str(e))
+        print("Erro enviaEmail: "+str(e))
 
-def enviaStatus():
-    pass
+def enviaStatus(login,password,destino,texto):
+    msg = MIMEText(str(texto))
+    msg['Subject'] = "Status ppp OK"
+    msg['From'] = login
+    msg['To'] = destino
+
+    try:  
+        server = smtplib.SMTP_SSL(host, 465)
+        server.ehlo()
+        server.login(login, password)
+        server.sendmail(login, destino, msg.as_string())
+        server.close()
+        print('Email enviado!')
+    except smtplib.SMTPException as e:  
+        print("Erro enviaStatus: "+str(e))
 
 def conectar(log,pwd,host):
     try:
@@ -80,13 +92,19 @@ def leremail(conn):
         conn.logout()
         return(email)
     except IndexError as e:
-        sys.stdout.write("Nao ha comandos a serem executados")
+        sys.stdout.write("Nao ha comandos a serem executados ")
 
 def checkcomando(email):
+    comandos = []
     try:
-        pattern_comando = re.compile(r'(###comando:)(ppp|print|status|stop)')
+        pattern_comando = re.compile(r'(###:)(ppp|ppa|print|status|stop|agenda|\?)(:)?((\d)*)')
         comando = pattern_comando.search(email.decode('utf-8'))
-        return(comando.group(2))
+        comandos.append(comando.group(2))
+        try:
+            comandos.append(comando.group(4))
+        except:
+            pass
+        return(comandos)
     except Exception as e:
         pass
 
@@ -120,7 +138,6 @@ def ppp(wdriver, logp,pwdp, sofoto):
         wdriver.find_element_by_id('form:j_idt77').click()
         time.sleep(3)
         wdriver.find_element_by_id('form:j_idt75').click() #voltar
-    #wdriver.find_element_by_link_text('FREQUÊNCIA').click()
     wdriver.find_element_by_link_text(base64.b64decode(b'RlJFUVXDik5DSUE=').decode('utf-8')).click()
     wdriver.execute_script("document.body.style.zoom='73%'")
     wdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -133,13 +150,12 @@ if __name__ == '__main__':
     while(True):
         sys.stdout.write("\r{}".format("Rodando..."))
         sys.stdout.flush()
-        try:
-            #TESTA SE FORA DO HR
+        try:        
             if(datetime.datetime.today().weekday()>=5):
                 sys.stdout.write("\r{}".format("Sleeping(fds)..."))
                 sys.stdout.flush()
                 time.sleep(300)
-
+            
             now = datetime.datetime.now().time()
             while(now.hour not in range(6,20)):
                 sys.stdout.write("\r({}) Sleeping...".format(datetime.datetime.now().time()))
@@ -149,11 +165,12 @@ if __name__ == '__main__':
                     
             conn = conectar(logm,base64.b64decode(pwdm).decode('ascii'),host)
             email = leremail(conn)
-            comando = checkcomando(email)
-            if(comando):
-                print("Executando: "+comando)
+            comandos = checkcomando(email)
+            print("COMANDOS:"+str(comandos))
+            if(comandos is not None):
+                print("Executando: "+str(comandos[0]))
 
-                if(comando==cmds[0]): #ppp
+                if(comandos[0]==cmds[0]): #ppp
                     driver = webdriver.Chrome()
                     driver.set_window_size(1120, 1050)
                     ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'),False)
@@ -161,7 +178,7 @@ if __name__ == '__main__':
                     driver.close()
                     enviaEmail(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
                 
-                if(comando==cmds[1]): #print
+                if(comandos[0]==cmds[1]): #print
                     driver = webdriver.Chrome()
                     driver.set_window_size(1120, 1050)
                     ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'),True)
@@ -169,16 +186,38 @@ if __name__ == '__main__':
                     enviaEmail(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
                     print("SCREENSHOT ENVIADO!")                    
                 
-                if(comando==cmds[2]): #stop
+                if(comandos[0]==cmds[2]): #stop
                     print("EXIT!")
                     quit()
                 
-                if(comando==cmds[3]): #status
-                    print("Num sequencia enviado")
+                if(comandos[0]==cmds[3]): #status
+                    enviaStatus(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com","OK")
+                    print("STATUS ENVIADO!")
+                
+                if(comandos[0]==cmds[4]): #ppa
+                    if(comandos[1] is None ): #Nao tem o segundo argumento, tempo.
+                        print("Time faltando")
+                    else:
+                        tempo = str(comandos[1])
+                        if(len(tempo)!=4):#hm
+                            print("Erro - padrao deve ser HHMM")
+                            #target = datetime.datetime(time[4:8],time[2:4],time[0:2],time[8:10],time[10:12])                        else:
+                        else:
+                            target = datetime.datetime.today().replace(hour=tempo[0:2],minute=tempo[2:4])
+                            print(target)
+
+
+                if(comandos[0]==cmds[5]): #agenda
+                    pass
+                
+                if(comandos[0]==cmds[6]): #?
+                    texto = "###:\nppp - point\nprint - snapshot\nstop - para daemon\nstatus - ve se esta rodando\nppa:HHMM - agenda point\nagenda - checa agendamentos"
+                    enviaStatus(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com",texto)
+                    print("HELP ENVIADO!")
             else:
                 time.sleep(sleeptime)
         except Exception as e:
-                print("[-]ERRO:"+str(e))
+                print("[-]ERRO MAIN:"+str(e))
     '''target = datetime.datetime(2017,10,10,15,33)
 
         while(datetime.datetime.now()<=target):
