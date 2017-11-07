@@ -203,7 +203,7 @@ if __name__ == '__main__':
                             print("Erro - padrao deve ser HHMM")
                             #target = datetime.datetime(time[4:8],time[2:4],time[0:2],time[8:10],time[10:12])                        else:
                         else:
-                            target = datetime.datetime.today().replace(hour=tempo[0:2],minute=tempo[2:4])
+                            target = datetime.datetime.today().replace(hour=int(tempo[0:2]),minute=int(tempo[2:4]))
                             print(target)
 
 
