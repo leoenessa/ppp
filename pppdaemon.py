@@ -14,7 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 import os
 
-sleeptime = 60
+sleeptime = 30
 
 logp = "leonardo.conceicao"
 pwdp = b'bGVvbGVvMTIz'
@@ -135,13 +135,29 @@ def ppp(wdriver, logp,pwdp, sofoto):
         wdriver.implicitly_wait(1)
         wdriver.find_element_by_link_text(base64.b64decode(b'UkVHSVNUUkFSIFBPTlRP').decode('ascii')).click()
         wdriver.implicitly_wait(1)
-        wdriver.find_element_by_id('form:j_idt77').click()
+        wdriver.find_element_by_id('form:j_idt77').click() #bingo
         time.sleep(3)
         wdriver.find_element_by_id('form:j_idt75').click() #voltar
     wdriver.find_element_by_link_text(base64.b64decode(b'RlJFUVXDik5DSUE=').decode('utf-8')).click()
     wdriver.execute_script("document.body.style.zoom='73%'")
     wdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     wdriver.save_screenshot('snapshot.jpg')
+
+def executaAgendado():
+    if(len(agendado)==0):
+        pass
+    else:
+        for hora_agendada in agendado:
+            if(datetime.datetime.now()>=hora_agendada):
+                driver = webdriver.Chrome()
+                driver.set_window_size(1120, 1050)
+                ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'),False)
+                print("DONE!")
+                driver.close()
+                enviaEmail(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
+                agendado.remove(hora_agendada)
+            else:#####TIRAR DEPOIS
+                print("Ha um PPP agendado para: "+str(hora_agendada))
 
 if __name__ == '__main__':
     
@@ -166,12 +182,16 @@ if __name__ == '__main__':
             conn = conectar(logm,base64.b64decode(pwdm).decode('ascii'),host)
             email = leremail(conn)
             comandos = checkcomando(email)
-            print("COMANDOS:"+str(comandos))
+            print("COMANDOS:%s \r"%(str(comandos)),end='')
+
+            executaAgendado()
+
             if(comandos is not None):
-                print("Executando: "+str(comandos[0]))
+                print("\nExecutando: "+str(comandos[0]))
 
                 if(comandos[0]==cmds[0]): #ppp
                     driver = webdriver.Chrome()
+                    #driver = webdriver.PhantomJS()
                     driver.set_window_size(1120, 1050)
                     ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'),False)
                     print("DONE!")
@@ -191,7 +211,16 @@ if __name__ == '__main__':
                     quit()
                 
                 if(comandos[0]==cmds[3]): #status
-                    enviaStatus(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com","OK")
+                    if(len(agendado)>0):
+                        todasashoras = ""
+                        for hora_agendada in agendado:
+                            todasashoras+=str(hora_agendada)
+                            todasashoras+="\n"
+                        texto = "OK\nHa agendamento para:%s"%(str(todasashoras))
+                    else:
+                        texto = "OK"
+
+                    enviaStatus(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com",texto)
                     print("STATUS ENVIADO!")
                 
                 if(comandos[0]==cmds[4]): #ppa
@@ -201,10 +230,11 @@ if __name__ == '__main__':
                         tempo = str(comandos[1])
                         if(len(tempo)!=4):#hm
                             print("Erro - padrao deve ser HHMM")
-                            #target = datetime.datetime(time[4:8],time[2:4],time[0:2],time[8:10],time[10:12])                        else:
                         else:
                             target = datetime.datetime.today().replace(hour=int(tempo[0:2]),minute=int(tempo[2:4]))
-                            print(target)
+                            agendado.append(target)
+                            enviaStatus(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com","Agendado para: "+str(target))
+                            print(" Agendado! ")
 
 
                 if(comandos[0]==cmds[5]): #agenda
@@ -218,16 +248,3 @@ if __name__ == '__main__':
                 time.sleep(sleeptime)
         except Exception as e:
                 print("[-]ERRO MAIN:"+str(e))
-    '''target = datetime.datetime(2017,10,10,15,33)
-
-        while(datetime.datetime.now()<=target):
-            sys.stdout.write("\r({0}) Aguardando:-{1}".format(datetime.datetime.now(),target))
-        sys.stdout.flush()
-        time.sleep(5)
-
-        driver = webdriver.Chrome()
-        #driver = webdriver.PhantomJS()
-        driver.set_window_size(1120, 1050)
-        ppp(driver,log,pwd)
-        print("DONE!")
-        driver.close()'''
