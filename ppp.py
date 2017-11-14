@@ -14,60 +14,52 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 import os
 
-sleeptime = 60
+sleeptime = 15
 
-logp = "leonardo.conceicao"
+logp = b'bGVvbmFyZG8uY29uY2VpY2Fv'
 pwdp = b'bGVvbGVvMTIz'
-host="zmta.trt1.jus.br"
-#host = "imap.globo.com"
-logm= "leonardooc@globo.com"
-#logm= "leonardo.conceicao@trt1.jus.br"
-#pwdm = b'bGVvbGVvMTIz'
-pwdm = b'bGVvZW5lc3Nh'
-cmds = ["ppp","print","stop","status","pppa","agenda","?"]
+
+host= b'em10YS50cnQxLmp1cy5icg=='
+
+logm= b'bGVvbmFyZG8uY29uY2VpY2FvQHRydDEuanVzLmJy'
+pwdm = b'bGVvbGVvMTIz'
+dest_mail = b'bGVvbmFyZG9kZW9jQGdtYWlsLmNvbQ=='
+
+cmds = ["ppp","print","stop","status","ppa","del","?"]
 agendado = []
 
 
-def enviaEmail(login,password,destino):
-    msg = MIMEMultipart()
-    msg['Subject'] = 'Retorno ppp '+str(datetime.datetime.now().strftime("%d-%m-%H-%M"))
-    #msg['From'] = 'leonardooc@globo.com'
-    msg['From'] = 'leonardo.conceicao@trt1.jus.br'
-    msg['To'] = 'leonardodeoc@gmail.com'
-
-    part = MIMEBase("image","octet-stream")
-    part.set_payload(open('snapshot.jpg','rb').read())
-    encoders.encode_base64(part)
-
-    part.add_header('Content-Disposition', 'attachment; filename="snapshot.jpg"')
-
-    msg.attach(part)
-
-    try:  
-        server = smtplib.SMTP_SSL(host, 465)
-        server.ehlo()
-        server.login(login, password)
-        server.sendmail(login, destino, msg.as_string())
-        server.close()
-        print('Email enviado!')
-    except smtplib.SMTPException as e:  
-        print(str(e))
-
-def enviaStatus(login,password,destino):
-    msg = MIMEText("OK")
-    msg['Subject'] = "Status ppp OK"
-    msg['From'] = logm
+def enviaRetorno(login,password,destino,subject,texto,tipo):
+    if(tipo=='img'):
+        msg = MIMEMultipart()
+        part = MIMEBase("image","octet-stream")
+        part.set_payload(open('snapshot.jpg','rb').read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment; filename="snapshot.jpg"')
+        msg.attach(part)
+    else:
+        msg = MIMEText(str(texto))
+    
+    msg['Subject'] = subject
+    msg['From'] = login
     msg['To'] = destino
-
+        
     try:  
-        server = smtplib.SMTP_SSL(host, 465)
+        server = smtplib.SMTP_SSL(decodificar(host), 465)
         server.ehlo()
         server.login(login, password)
         server.sendmail(login, destino, msg.as_string())
         server.close()
         print('Email enviado!')
     except smtplib.SMTPException as e:  
-        print(str(e))
+        print("Erro enviaStatus: "+str(e))
+
+def criaDriver():
+    driver = webdriver.Chrome()
+    #driver = webdriver.PhantomJS()
+    driver.set_window_size(1120, 1050)
+
+    return(driver)
 
 def conectar(log,pwd,host):
     try:
@@ -78,7 +70,6 @@ def conectar(log,pwd,host):
         return(conn)
     except Exception as e:
         print("ERRO NA CONEXAO\n"+str(e))
-
 
 def leremail(conn):
     try:
@@ -94,13 +85,14 @@ def leremail(conn):
         conn.logout()
         return(email)
     except IndexError as e:
-        sys.stdout.write("Nao ha comandos a serem executados")
+        sys.stdout.write("Nao ha comandos a serem executados ")
+        sys.stdout.flush()
 
 def checkcomando(email):
+    comandos = []
     try:
-        pattern_comando = re.compile(r'(###:)(ppp|print|status|stop|agenda|\?)(:)?(\d)*')
+        pattern_comando = re.compile(r'(#:)(ppp|ppa|print|status|del|stop|agenda|\?)(:)?((\d)*)')
         comando = pattern_comando.search(email.decode('utf-8'))
-        comandos = []
         comandos.append(comando.group(2))
         try:
             comandos.append(comando.group(4))
@@ -112,7 +104,7 @@ def checkcomando(email):
 
 def ppp(wdriver, logp,pwdp, sofoto):
     print("\nConectando...")
-    wdriver.get(base64.b64decode(b'aHR0cHM6Ly9wb250by50cnQxLmp1cy5icg==').decode('ascii'))
+    wdriver.get(decodificar(b'aHR0cHM6Ly9wb250by50cnQxLmp1cy5icg=='))
     print("Logando...")
     wdriver.implicitly_wait(5)
     try:
@@ -135,16 +127,61 @@ def ppp(wdriver, logp,pwdp, sofoto):
         pass
     if(not sofoto):
         wdriver.implicitly_wait(1)
-        wdriver.find_element_by_link_text(base64.b64decode(b'UkVHSVNUUkFSIFBPTlRP').decode('ascii')).click()
+        wdriver.find_element_by_link_text(decodificar(b'UkVHSVNUUkFSIFBPTlRP')).click()
         wdriver.implicitly_wait(1)
-        wdriver.find_element_by_id('form:j_idt77').click()
+        wdriver.find_element_by_id('form:j_idt77').click() #bingo
         time.sleep(3)
         wdriver.find_element_by_id('form:j_idt75').click() #voltar
-    #wdriver.find_element_by_link_text('FREQUÊNCIA').click()
     wdriver.find_element_by_link_text(base64.b64decode(b'RlJFUVXDik5DSUE=').decode('utf-8')).click()
     wdriver.execute_script("document.body.style.zoom='73%'")
     wdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     wdriver.save_screenshot('snapshot.jpg')
+
+def executaAgendado():
+    if(len(agendado)==0):
+        pass
+    else:
+        count = 1
+        sys.stdout.write("\r\033[K")
+        for hora_agendada in agendado:
+            if(datetime.datetime.now()>=hora_agendada):
+                driver = criaDriver()
+                ppp(driver,decodificar(logp),decodificar(pwdp),False)
+                print("DONE!")
+                driver.close()
+                enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'Executado agendamento','','img')
+                agendado.remove(hora_agendada)
+            else:#####TIRAR DEPOIS
+                sys.stdout.write("Ha PPP agendado para: (%d) - %s"%(count,str(hora_agendada)))
+                sys.stdout.flush()
+                count+=1
+
+def checaAgendado():
+    if(len(agendado)==0):
+        texto="Nao ha horarios agendados"
+    else:
+        count = 1
+        texto = "Ha ppp agendado para:\n"
+        for hora_agendada in agendado:
+            texto+="(%d) - %s\n"%(count,str(hora_agendada))
+            count+=1 
+    enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'PPPs agendados',texto,'agenda')
+
+def deletaAgendado(numero):
+    if(len(agendado)==0 or (int(numero)-1)>len(agendado)):
+        print('Nao ha o ppp a ser deletado')
+    else:
+        if(int(numero)==0):
+            del(agendado[:])
+            print("Itens removidos")
+        else:
+            del(agendado[int(numero)-1])
+            print("Item removido")
+            #checaAgendado()
+
+def decodificar(entrada):
+    return(base64.b64decode(entrada).decode('ascii'))
+
 
 if __name__ == '__main__':
     
@@ -153,42 +190,41 @@ if __name__ == '__main__':
     while(True):
         sys.stdout.write("\r{}".format("Rodando..."))
         sys.stdout.flush()
-        try:
-            '''
-            #TESTA SE FORA DO HR
+        try:        
             if(datetime.datetime.today().weekday()>=5):
                 sys.stdout.write("\r{}".format("Sleeping(fds)..."))
                 sys.stdout.flush()
                 time.sleep(300)
-            '''
-
+            
             now = datetime.datetime.now().time()
-            while(now.hour not in range(6,23)):
+            while(now.hour not in range(6,20)):
                 sys.stdout.write("\r({}) Sleeping...".format(datetime.datetime.now().time()))
                 sys.stdout.flush()
                 time.sleep(60)
                 now = datetime.datetime.now().time()
                     
-            conn = conectar(logm,base64.b64decode(pwdm).decode('ascii'),host)
+            conn = conectar(decodificar(logm),decodificar(pwdm),decodificar(host))
             email = leremail(conn)
             comandos = checkcomando(email)
-            if(comandos[0]):
-                print("Executando: "+comandos[0])
+            print("COMANDOS:%s \r"%(str(comandos)),end='')
+
+            executaAgendado()
+
+            if(comandos is not None):
+                print("\nExecutando: "+str(comandos[0]))
 
                 if(comandos[0]==cmds[0]): #ppp
-                    driver = webdriver.Chrome()
-                    driver.set_window_size(1120, 1050)
-                    ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'),False)
+                    driver = criaDriver()
+                    ppp(driver,decodificar(logp),decodificar(pwdp),False)
                     print("DONE!")
                     driver.close()
-                    enviaEmail(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
+                    enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'Retorno ppp '+str(datetime.datetime.now().strftime("%d/%m-%H:%M")),'','img')
                 
                 if(comandos[0]==cmds[1]): #print
-                    driver = webdriver.Chrome()
-                    driver.set_window_size(1120, 1050)
-                    ppp(driver,logp,base64.b64decode(pwdp).decode('ascii'),True)
+                    driver = criaDriver()
+                    ppp(driver,decodificar(logp),decodificar(pwdp),True)
                     driver.close()
-                    enviaEmail(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
+                    enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'Retorno ppp '+str(datetime.datetime.now().strftime("%d/%m-%H:%M")),'','img')
                     print("SCREENSHOT ENVIADO!")                    
                 
                 if(comandos[0]==cmds[2]): #stop
@@ -196,33 +232,34 @@ if __name__ == '__main__':
                     quit()
                 
                 if(comandos[0]==cmds[3]): #status
-                    enviaStatus(logm,base64.b64decode(pwdm).decode('ascii'),"leonardodeoc@gmail.com")
+                    checaAgendado()
+                    print("STATUS ENVIADO!")
                 
-                if(comandos[0]==cmds[4]): #pppa
-                    if(comandos.length not 2): #Nao tem o segundo argumento, tempo.
-                        print("Time errado")
+                if(comandos[0]==cmds[4]): #ppa
+                    if(comandos[1] is None ): #Nao tem o segundo argumento, tempo.
+                        print("Time faltando")
                     else:
-                        time = comandos[1] 
-                        if(time.length==12):#dmahm
-                            target = datetime.datetime(time[4:8],time[2:4],time[0:2],time[8:10],time[10:12])
-                        if(time.length==4):#hm
-                            target = datetime.datetime()
+                        tempo = str(comandos[1])
+                        if(len(tempo)!=4):#hm
+                            print("Erro - padrao deve ser HHMM")
                         else:
-                            print("Time errado 2")
+                            target = datetime.datetime.today().replace(hour=int(tempo[0:2]),minute=int(tempo[2:4]))
+                            agendado.append(target)
+                            enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'Retorno Agendamento','Agendado para: '+str(target),'ppa')
+                            print(" Agendado! ")
+
+
+                if(comandos[0]==cmds[5]): #del
+                    if(comandos[1] is None):
+                        print("PPP faltando")
+                    else:
+                        deletaAgendado(comandos[1])
+                
+                if(comandos[0]==cmds[6]): #?
+                    texto = "#:\nppp - point\nprint - snapshot\nstop - para daemon\nstatus - ve agenda\nppa:HHMM - agenda point\ndel - deleta agendamentos(0 deleta td)"
+                    enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'ppp Comandos',texto,'?')
+                    print("HELP ENVIADO!")
             else:
-                time.sleep(sleeptime)
+                time.sleep(sleeptime)       
         except Exception as e:
-                print("[-]ERRO:"+str(e))
-    '''target = datetime.datetime(2017,10,10,15,33)
-
-        while(datetime.datetime.now()<=target):
-            sys.stdout.write("\r({0}) Aguardando:-{1}".format(datetime.datetime.now(),target))
-        sys.stdout.flush()
-        time.sleep(5)
-
-        driver = webdriver.Chrome()
-        #driver = webdriver.PhantomJS()
-        driver.set_window_size(1120, 1050)
-        ppp(driver,log,pwd)
-        print("DONE!")
-        driver.close()'''
+                print("[-]ERRO MAIN:"+str(e))
