@@ -1,3 +1,10 @@
+logp = b'bG5hcmRvLmNvbmNlaWNhbw=='
+pwdp = b'bGVvbGVvMTIz'
+host = b'em10YS50cnQxLmp1cy5icg=='
+logm = b'bGVvbmFyZG8uY29uY2VpY2FvQHRydDEuanVzLmJy'
+pwdm = b'bGVvbGVvMTIz'
+dest_mail = b'bGVvbmFyZG9kZW9jQGdtYWlsLmNvbQ=='
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import datetime
@@ -15,17 +22,9 @@ from email.mime.base import MIMEBase
 import os
 
 sleeptime = 15
-
-logp = b'bGVvbmFyZG8uY29uY2VpY2Fv'
-pwdp = b'bGVvbGVvMTIz'
-
-host= b'em10YS50cnQxLmp1cy5icg=='
-
-logm= b'bGVvbmFyZG8uY29uY2VpY2FvQHRydDEuanVzLmJy'
-pwdm = b'bGVvbGVvMTIz'
-dest_mail = b'bGVvbmFyZG9kZW9jQGdtYWlsLmNvbQ=='
-
 cmds = ["ppp","print","stop","status","ppa","del","?"]
+
+conteudo = []
 agendado = []
 
 
@@ -184,82 +183,103 @@ def decodificar(entrada):
 
 
 if __name__ == '__main__':
-    
-    os.system('cls')
 
-    while(True):
-        sys.stdout.write("\r{}".format("Rodando..."))
-        sys.stdout.flush()
-        try:        
-            if(datetime.datetime.today().weekday()>=5):
-                sys.stdout.write("\r{}".format("Sleeping(fds)..."))
-                sys.stdout.flush()
-                time.sleep(300)
-            
-            now = datetime.datetime.now().time()
-            while(now.hour not in range(6,20)):
-                sys.stdout.write("\r({}) Sleeping...".format(datetime.datetime.now().time()))
-                sys.stdout.flush()
-                time.sleep(60)
+    if(len(sys.argv)==2):
+        if(sys.argv[1]=='-n'):
+            with open(__file__,'r') as arquivo:
+                for linha in arquivo:
+                    conteudo.append(linha)
+
+            with open(__file__,'w') as arquivo:
+                conteudo[0] = "logp = {}\n".format(base64.b64encode(bytes(input("Novo valor para logp:"),'utf-8')))
+                conteudo[1] = "pwdp = {}\n".format(base64.b64encode(bytes(input("Novo valor para pwdp:"),'utf-8')))
+                novo_host = input("Novo valor para host (Deixar em branco zmta):")
+                if(novo_host==''):
+                    conteudo[2] = "host = {}\n".format(b'em10YS50cnQxLmp1cy5icg==')
+                else:
+                    conteudo[2] = "host = {}\n".format(base64.b64encode(bytes(novo_host,'utf-8')))
+                conteudo[3] = "logm = {}\n".format(base64.b64encode(bytes(input("Novo valor para log mail:"),'utf-8')))
+                conteudo[4] = "pwdm = {}\n".format(base64.b64encode(bytes(input("Novo valor para pwd mail:"),'utf-8')))
+                conteudo[5] = "dest_mail = {}\n".format(base64.b64encode(bytes(input("Novo valor para mail destino:"),'utf-8')))
+                
+                for i in range(len(conteudo)):
+                    arquivo.write(conteudo[i])
+    else:
+        os.system('cls')
+
+        while(True):
+            sys.stdout.write("\r{}".format("Rodando..."))
+            sys.stdout.flush()
+            try:        
+                if(datetime.datetime.today().weekday()>=5):
+                    sys.stdout.write("\r{}".format("Sleeping(fds)..."))
+                    sys.stdout.flush()
+                    time.sleep(300)
+                
                 now = datetime.datetime.now().time()
+                while(now.hour not in range(6,20)):
+                    sys.stdout.write("\r({}) Sleeping...".format(datetime.datetime.now().time()))
+                    sys.stdout.flush()
+                    time.sleep(60)
+                    now = datetime.datetime.now().time()
+                        
+                conn = conectar(decodificar(logm),decodificar(pwdm),decodificar(host))
+                email = leremail(conn)
+                comandos = checkcomando(email)
+                print("COMANDOS:%s \r"%(str(comandos)),end='')
+
+                executaAgendado()
+
+                if(comandos is not None):
+                    print("\nExecutando: "+str(comandos[0]))
+
+                    if(comandos[0]==cmds[0]): #ppp
+                        driver = criaDriver()
+                        ppp(driver,decodificar(logp),decodificar(pwdp),False)
+                        print("DONE!")
+                        driver.close()
+                        enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'Retorno ppp '+str(datetime.datetime.now().strftime("%d/%m-%H:%M")),'','img')
                     
-            conn = conectar(decodificar(logm),decodificar(pwdm),decodificar(host))
-            email = leremail(conn)
-            comandos = checkcomando(email)
-            print("COMANDOS:%s \r"%(str(comandos)),end='')
-
-            executaAgendado()
-
-            if(comandos is not None):
-                print("\nExecutando: "+str(comandos[0]))
-
-                if(comandos[0]==cmds[0]): #ppp
-                    driver = criaDriver()
-                    ppp(driver,decodificar(logp),decodificar(pwdp),False)
-                    print("DONE!")
-                    driver.close()
-                    enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'Retorno ppp '+str(datetime.datetime.now().strftime("%d/%m-%H:%M")),'','img')
-                
-                if(comandos[0]==cmds[1]): #print
-                    driver = criaDriver()
-                    ppp(driver,decodificar(logp),decodificar(pwdp),True)
-                    driver.close()
-                    enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'Retorno ppp '+str(datetime.datetime.now().strftime("%d/%m-%H:%M")),'','img')
-                    print("SCREENSHOT ENVIADO!")                    
-                
-                if(comandos[0]==cmds[2]): #stop
-                    print("EXIT!")
-                    quit()
-                
-                if(comandos[0]==cmds[3]): #status
-                    checaAgendado()
-                    print("STATUS ENVIADO!")
-                
-                if(comandos[0]==cmds[4]): #ppa
-                    if(comandos[1] is None ): #Nao tem o segundo argumento, tempo.
-                        print("Time faltando")
-                    else:
-                        tempo = str(comandos[1])
-                        if(len(tempo)!=4):#hm
-                            print("Erro - padrao deve ser HHMM")
+                    if(comandos[0]==cmds[1]): #print
+                        driver = criaDriver()
+                        ppp(driver,decodificar(logp),decodificar(pwdp),True)
+                        driver.close()
+                        enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'Retorno ppp '+str(datetime.datetime.now().strftime("%d/%m-%H:%M")),'','img')
+                        print("SCREENSHOT ENVIADO!")                    
+                    
+                    if(comandos[0]==cmds[2]): #stop
+                        print("EXIT!")
+                        quit()
+                    
+                    if(comandos[0]==cmds[3]): #status
+                        checaAgendado()
+                        print("STATUS ENVIADO!")
+                    
+                    if(comandos[0]==cmds[4]): #ppa
+                        if(comandos[1] is None ): #Nao tem o segundo argumento, tempo.
+                            print("Time faltando")
                         else:
-                            target = datetime.datetime.today().replace(hour=int(tempo[0:2]),minute=int(tempo[2:4]))
-                            agendado.append(target)
-                            enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'Retorno Agendamento','Agendado para: '+str(target),'ppa')
-                            print(" Agendado! ")
+                            tempo = str(comandos[1])
+                            if(len(tempo)!=4):#hm
+                                print("Erro - padrao deve ser HHMM")
+                            else:
+                                target = datetime.datetime.today().replace(hour=int(tempo[0:2]),minute=int(tempo[2:4]))
+                                agendado.append(target)
+                                enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'Retorno Agendamento','Agendado para: '+str(target),'ppa')
+                                print(" Agendado! ")
 
 
-                if(comandos[0]==cmds[5]): #del
-                    if(comandos[1] is None):
-                        print("PPP faltando")
-                    else:
-                        deletaAgendado(comandos[1])
-                
-                if(comandos[0]==cmds[6]): #?
-                    texto = "#:\nppp - point\nprint - snapshot\nstop - para daemon\nstatus - ve agenda\nppa:HHMM - agenda point\ndel - deleta agendamentos(0 deleta td)"
-                    enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'ppp Comandos',texto,'?')
-                    print("HELP ENVIADO!")
-            else:
-                time.sleep(sleeptime)       
-        except Exception as e:
-                print("[-]ERRO MAIN:"+str(e))
+                    if(comandos[0]==cmds[5]): #del
+                        if(comandos[1] is None):
+                            print("PPP faltando")
+                        else:
+                            deletaAgendado(comandos[1])
+                    
+                    if(comandos[0]==cmds[6]): #?
+                        texto = "#:\nppp - point\nprint - snapshot\nstop - para daemon\nstatus - ve agenda\nppa:HHMM - agenda point\ndel - deleta agendamentos(0 deleta td)"
+                        enviaRetorno(decodificar(logm),decodificar(pwdm),decodificar(dest_mail),'ppp Comandos',texto,'?')
+                        print("HELP ENVIADO!")
+                else:
+                    time.sleep(sleeptime)       
+            except Exception as e:
+                    print("[-]ERRO MAIN:"+str(e))
